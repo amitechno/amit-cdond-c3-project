@@ -62,6 +62,9 @@ jobs:
     docker:
       - image: circleci/node:13.8.0
     steps:
+      - checkout
+      - restore_cache:
+          keys: [scan-frontend]
       - run:
           name: Scan frontend
           command: |
@@ -73,6 +76,9 @@ jobs:
     docker:
       - image: circleci/node:13.8.0
     steps:
+      - checkout
+      - restore_cache:
+          keys: [scan-backend]
       - run:
           name: Scan backend
           command: |
