@@ -68,15 +68,31 @@ jobs:
                   "type": "section",
                   "fields": [
                     {
-                      "type": "plain_text",
-                      "text": "*This is a text notification*",
-                      "emoji": true
+                      "type": "mrkdwn",
+                      "text": "*Job Name:* $CIRCLE_JOB"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job Status:* $CIRCLE_JOB_STATUS"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit Details*"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit Number:* $CIRCLE_SHA1"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit Message:* $CIRCLE_COMMIT_MESSAGE"
                     }
                   ]
                 }
               ]
             }
           event: always
+
 
   scan-frontend:
     docker:
