@@ -60,6 +60,13 @@ jobs:
             cd backend
             npm install
             npm run test
+      - slack/notify:
+          event: fail
+          mentions: '@EngineeringTeam'
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: success_tagged_test_1
   scan-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -101,16 +108,8 @@ workflows:
           requires: [build-frontend]
       - test-backend:
           requires: [build-backend]
+          context: slack-credentials
       - scan-backend:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
-      - slack/notify:
-          requires:
-            - build-frontend
-            - build-backend
-            - test-frontend
-            - test-backend
-            - scan-backend
-            - scan-frontend
-          event: fail
