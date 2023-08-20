@@ -61,23 +61,22 @@ jobs:
             npm install
             npm run test
       - slack/notify:
-          event: fail
-          mentions: '@amit sharma'
           custom: |
             {
               "blocks": [
                 {
-                  "type": "section"
+                  "type": "section",
                   "fields": [
                     {
                       "type": "plain_text",
-                      "text": "*test-backend* job has failed",
+                      "text": "*This is a text notification*",
                       "emoji": true
                     }
                   ]
                 }
               ]
             }
+          event: always
 
   scan-frontend:
     docker:
