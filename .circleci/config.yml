@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  slack: circleci/slack@4.12.5
 jobs:
   build-frontend:
     docker:
@@ -71,8 +73,6 @@ jobs:
             cd frontend
             npm install
             npm audit fix --audit-level=critical --force
-            npm audit fix --force
-            npm audit --audit-level=critical
 
   scan-backend:
     docker:
