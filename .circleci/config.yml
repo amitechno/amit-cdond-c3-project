@@ -71,7 +71,7 @@ jobs:
                   "fields": [
                     {
                       "type": "plain_text",
-                      "text": "*test-backend* job has failed"
+                      "text": "*test-backend* job has failed",
                       "emoji": true
                     }
                   ]
