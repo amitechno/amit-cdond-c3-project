@@ -73,7 +73,7 @@ jobs:
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Job Status:* $CIRCLE_JOB_STATUS"
+                      "text": "*Job Status:* $(if [ $CIRCLE_JOB_STATUS == 'success' ]; then echo 'Success'; else echo 'Failure'; fi)"
                     },
                     {
                       "type": "mrkdwn",
@@ -92,7 +92,6 @@ jobs:
               ]
             }
           event: always
-
 
   scan-frontend:
     docker:
