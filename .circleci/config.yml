@@ -61,37 +61,12 @@ jobs:
             npm install
             npm run test
       - slack/notify:
-          custom: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Job Name:* $CIRCLE_JOB"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Job Status:* $(if [ $CIRCLE_JOB_STATUS == 'success' ]; then echo 'Success'; else echo 'Failure'; fi)"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Commit Details*"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Commit Number:* $CIRCLE_SHA1"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Commit Message:* $CIRCLE_COMMIT_MESSAGE"
-                    }
-                  ]
-                }
-              ]
-            }
-          event: always
+          event: pass
+          template: success_tagged_deploy_1
+      - slack/notify:
+          event: fail
+          mentions: "@amit sharma"
+          template: basic_fail_1
 
   scan-frontend:
     docker:
