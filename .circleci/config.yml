@@ -61,8 +61,23 @@ jobs:
             npm install
             npm run test
       - slack/notify:
+          channel: C05NP7DU9HA
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "plain_text",
+                      "text": "*This is a text notification*",
+                      "emoji": true
+                    }
+                  ]
+                }
+              ]
+            }
           event: always
-          template: Backend_Test_Result
 
   scan-frontend:
     docker:
