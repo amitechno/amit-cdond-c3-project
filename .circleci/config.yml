@@ -61,12 +61,9 @@ jobs:
             npm install
             npm run test
       - slack/notify:
-          event: fail
-          mentions: '@EngineeringTeam'
-          template: basic_fail_1
-      - slack/notify:
-          event: pass
-          template: success_tagged_test_1
+          event: always
+          template: Backend_Test_Result
+
   scan-frontend:
     docker:
       - image: circleci/node:13.8.0
