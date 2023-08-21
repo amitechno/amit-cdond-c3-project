@@ -156,13 +156,11 @@ jobs:
             INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
             echo "[web]" > ~/project/inventory.txt
             echo "$INSTANCE_IP" >> ~/project/inventory.txt
+            cat ~/project/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
             - project/inventory.txt    
-      - run:
-          name: Display contents of inventory.txt
-          command: cat project/inventory.txt
       # Destroy environment on failure
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
