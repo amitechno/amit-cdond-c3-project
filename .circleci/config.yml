@@ -147,22 +147,19 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
               --tags project=udapeople
       - run:
-          name: List contents of workspace
-          command: ls -R ~/workspace/project/.circleci
-      - run:
           name: Add back-end IP to Ansible inventory
           command: |
             # Fetch EC2 instance IP
             INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
-            echo "[web]" > ~/workspace/project/.circleci/ansible/inventory.txt
-            echo "$INSTANCE_IP" >> ~/workspace/project/.circleci/ansible/inventory.txt
+            echo "[web]" > ~/project/inventory.txt
+            echo "$INSTANCE_IP" >> ~/project/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
-            - workspace/project/.circleci/ansible/inventory.txt    
+            - project/inventory.txt    
       - run:
           name: Display contents of inventory.txt
-          command: cat workspace/project/.circleci/ansible/inventory.txt
+          command: cat project/inventory.txt
       # Destroy environment on failure
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
