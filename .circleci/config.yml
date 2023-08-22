@@ -185,8 +185,7 @@ jobs:
           name: Install dependencies
           command: |
             # Install necessary dependencies
-            apt-get update
-            apt-get install -y tar gzip ansible awscli
+            apk add ansible gzip openssh-client
 
       # Configure server
       - run:
