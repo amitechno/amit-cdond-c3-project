@@ -156,7 +156,7 @@ jobs:
             INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
             echo "[web]" > ~/project/ansible/inventory.txt
             echo "ansible-host=$INSTANCE_IP" >> ~/project/ansible/inventory.txt
-            cat ~/inventory.txt
+            cat ~/project/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
