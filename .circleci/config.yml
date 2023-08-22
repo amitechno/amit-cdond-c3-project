@@ -155,7 +155,7 @@ jobs:
             # Fetch EC2 instance IP
             INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
             echo "[web]" > ~/project/ansible/inventory.txt
-            echo "ansible-host=$INSTANCE_IP" >> ~/project/ansible/inventory.txt
+            echo "$INSTANCE_IP" >> ~/project/ansible/inventory.txt
             cat ~/project/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
@@ -196,8 +196,32 @@ jobs:
             cat ~/workspace/project/ansible/inventory.txt
             pwd
             ls -la
-            ansible-playbook ansible/configure-server.yml -i ~/workspace/project/ansible/inventory.txt
+            ansible-playbook ansible/configure-server.yml -i ~/workspace/project/ansible/inventory.txt -vvvv
 
+  run-migrations:
+    docker:
+      - image: node:14 
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-deps-{{ checksum "package.json" }}
+            - v1-deps-
+      - run:
+          name: Run migrations
+          command: |
+            cd backend
+            npm install
+            ## Run and save the migration output
+            npm run migrations > migrations_dump.txt
+
+      - run:
+          name: Send migration results to memstash
+          command: |
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+              curl https://kvdb.io/${KVDB_TOKEN}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+            fi
 
 
 workflows:
@@ -218,3 +242,5 @@ workflows:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
