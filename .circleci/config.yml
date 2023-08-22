@@ -153,15 +153,14 @@ jobs:
           name: Add back-end IP to Ansible inventory
           command: |
             # Fetch EC2 instance IP
-            rm ~/inventory.txt
             INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
-            echo "[web]" > ~/inventory.txt
+            echo "[web]" > ~/project/ansible/inventory.txt
             echo "ansible-host=$INSTANCE_IP" >> ~/inventory.txt
             cat ~/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
-            - ./inventory.txt   
+            - ./project/ansible/inventory.txt  
       # Destroy environment on failure
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -194,10 +193,10 @@ jobs:
           name: Configure server
           command: |
             # Run the Ansible playbook against the EC2 instance
-            cat ~/workspace/inventory.txt
+            cat ~/workspace/project/ansible/inventory.txt
             pwd
             ls -la
-            ansible-playbook ansible/configure-server.yml -i ~/workspace/inventory.txt
+            ansible-playbook ansible/configure-server.yml -i ~/workspace/project/ansible/inventory.txt
 
 
 
