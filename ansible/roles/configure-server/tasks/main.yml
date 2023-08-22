@@ -1,19 +1,24 @@
-- name: Install Python
-  apt:
-    name: python3
-    state: present
-
-- name: Update/upgrade packages
+- name: "Update apt packages"
+  become: yes
   apt:
     update_cache: yes
-    upgrade: yes
 
-- name: Install Node.js, npm, and pm2
+- name: "Upgrade packages"
+  become: yes
   apt:
-    name: 
+    upgrade: yes    
+
+- name: "Install Node.js and npm"
+  become: yes
+  apt:
+    name:
       - nodejs
       - npm
-  environment:
-    NODE_OPTIONS: "--max_old_space_size=4096" # Increase memory limit for npm
-  tags: 
-    - frontend
+    state: latest
+    update_cache: yes
+
+- name: "Install pm2"
+  become: yes
+  npm:
+    name: pm2
+    global: yes
