@@ -193,10 +193,12 @@ jobs:
           command: |
             # Run the Ansible playbook against the EC2 instance
             cat ~/inventory.txt
+            pwd
+            ls -la -R
             ansible-playbook -i ~/inventory.txt \
               --private-key ~/.ssh/id_rsa \  
               --user ubuntu \
-              ansible/configure-server.yml
+              project/ansible/configure-server.yml
 
       # Destroy environment on failure
       - destroy-environment:
