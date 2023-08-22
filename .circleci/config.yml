@@ -159,7 +159,7 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - ./inventory.txt    
+            - inventory.txt    
       # Destroy environment on failure
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -192,8 +192,8 @@ jobs:
           name: Configure server
           command: |
             # Run the Ansible playbook against the EC2 instance
-            cat ~/workspace/inventory.txt
-            ansible-playbook -i ~/workspace/inventory.txt \
+            cat ~/inventory.txt
+            ansible-playbook -i ~/inventory.txt \
               --private-key ~/.ssh/id_rsa \  
               --user ubuntu \
               .circleci/ansible/configure-server.yml
