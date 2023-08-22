@@ -195,7 +195,7 @@ jobs:
             cat ~/inventory.txt
             pwd
             ls -la
-            ansible-playbook project/ansible/configure-server.yml -i ~/inventory.txt
+            ansible-playbook ansible/configure-server.yml -i ~/inventory.txt
 
 
 
