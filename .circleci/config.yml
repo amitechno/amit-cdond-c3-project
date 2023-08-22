@@ -196,7 +196,7 @@ jobs:
             ansible-playbook -i ~/inventory.txt \
               --private-key ~/.ssh/id_rsa \  
               --user ubuntu \
-              .circleci/ansible/configure-server.yml
+              ansible/configure-server.yml
 
       # Destroy environment on failure
       - destroy-environment:
