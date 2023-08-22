@@ -154,16 +154,56 @@ jobs:
           command: |
             # Fetch EC2 instance IP
             INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
-            echo "[web]" > ~/project/inventory.txt
-            echo "$INSTANCE_IP" >> ~/project/inventory.txt
-            cat ~/project/inventory.txt
+            echo "[web]" > ~/inventory.txt
+            echo "$INSTANCE_IP" >> ~/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
-            - project/inventory.txt    
+            - inventory.txt    
       # Destroy environment on failure
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
+
+  configure-infrastructure:
+    docker:
+      - image: python:3.9.16 # Docker image that supports Ansible
+    steps:
+      - checkout  # Checkout code from git
+
+      # Add SSH key fingerprint to the job
+      - add_ssh_keys:
+          fingerprints:
+            - "ac:07:f1:f9:b4:90:b4:fe:28:89:52:98:1f:d4:2f:f0"
+
+      # Attach workspace to the job
+      - attach_workspace:
+          at: ~/
+
+      # Install dependencies
+      - run:
+          name: Install dependencies
+          command: |
+            # Install necessary dependencies
+            apt-get update
+            apt-get install -y tar gzip ansible awscli
+
+      # Configure server
+      - run:
+          name: Configure server
+          command: |
+            # Run the Ansible playbook against the EC2 instance
+            cat ~/workspace/inventory.txt
+            ansible-playbook -i ~/workspace/inventory.txt \
+              --private-key ~/.ssh/id_rsa \  
+              --user ubuntu \
+              .circleci/ansible/configure-server.yml
+
+      # Destroy environment on failure
+      - destroy-environment:
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
+            exit 1
+
+
 workflows:
   default:
     jobs:
@@ -180,3 +220,5 @@ workflows:
           requires: [build-frontend]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
