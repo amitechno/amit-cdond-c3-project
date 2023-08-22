@@ -198,12 +198,11 @@ jobs:
             ansible-playbook -i ~/inventory.txt \
               --private-key ~/.ssh/id_rsa \  
               --user ubuntu \
-              project/ansible/configure-server.yml
+              ansible/configure-server.yml
 
       # Destroy environment on failure
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
-            exit 1
 
 
 workflows:
