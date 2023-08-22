@@ -196,7 +196,7 @@ jobs:
             cat ~/workspace/project/ansible/inventory.txt
             pwd
             ls -la
-            ansible-playbook ansible/configure-server.yml -i ~/workspace/project/ansible/inventory.txt -vvvv
+            ansible-playbook ansible/configure-server.yml -i ~/workspace/project/ansible/inventory.txt -vvvv -k
 
   run-migrations:
     docker:
