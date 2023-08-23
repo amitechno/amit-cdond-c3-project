@@ -25,15 +25,24 @@ commands:
   
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+      workflowId:
+        type: string   
     steps:
       - run:
           name: Revert migrations
           when: on_fail
           command: |
-            cd ~/project/backend
-            npm install
-            npm run build
-            npm run migrations:revert
+            echo "Querying https://kvdb.io/${KVDB_KEY}/migration_<< parameters.workflowId >>"
+            SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_KEY}/migration_<< parameters.workflowId >>)
+            echo "Migration success was $SUCCESS"
+            if [ "$SUCCESS" -eq "1" ]; 
+            then
+              echo "Reverting migration"
+              cd ~/project/backend
+              npm install
+              npm run migration:revert
+            fi
 
 
 jobs:
