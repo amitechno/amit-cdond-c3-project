@@ -92,7 +92,6 @@ jobs:
           event: fail
           mentions: "@amit sharma"
           template: basic_fail_1
-
   scan-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -108,7 +107,6 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix --force
             npm audit --audit-level=critical
-
   scan-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -124,7 +122,6 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix --force
             npm audit --audit-level=critical
-
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli  # Replace with the Docker image that supports AWS CLI
@@ -164,7 +161,6 @@ jobs:
       # Destroy environment on failure
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
-
   configure-infrastructure:
     docker:
       - image: python:3.11-rc-alpine # Docker image that supports Ansible
@@ -198,7 +194,6 @@ jobs:
             ansible-playbook ansible/configure-server.yml -i ~/workspace/project/ansible/inventory.txt -vvvv
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
-
   run-migrations:
     docker:
       - image: node:14 
@@ -224,8 +219,7 @@ jobs:
             fi
       
       - destroy-environment:
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
-  
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7} 
   deploy-frontend:
     docker:
       - image: python:3.11-rc-alpine 
@@ -233,8 +227,6 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
-      - attach_workspace:
-          at: ~/workspace
       - run:
             name: Install Dependencies
             command: |
@@ -259,9 +251,7 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment:
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
-      
-                    
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}                         
   deploy-backend:
     docker:
       - image: python:3.11-rc-alpine 
@@ -290,7 +280,44 @@ jobs:
             ansible-playbook ansible/deploy-backend.yml -i ~/workspace/project/ansible/inventory.txt -vvvv
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
-      
+  smoke-test:
+    docker:
+      - image: alpine:latest  # Use a lightweight Docker image
+    steps:
+      - checkout  # Checkout code from Git
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --no-cache curl nodejs npm
+      - run:
+          name: Get backend URL
+          command: |
+            export BACKEND_IP=$(cat backend_ip.txt)  # Assuming you saved the IP address to a file
+            echo "BACKEND_IP=${BACKEND_IP}"
+      - run:
+          name: Backend smoke test.
+          command: |
+            API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+              echo "Backend smoke test passed."
+            else
+              echo "Backend smoke test failed."
+              exit 1
+            fi
+      - run:
+          name: Frontend smoke test.
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"
+            echo "${URL}"
+            if curl -s "${URL}" | grep "Welcome"
+            then
+              echo "Frontend smoke test passed."
+            else
+              echo "Frontend smoke test failed."
+              exit 1
+            fi    
 
 
 workflows:
