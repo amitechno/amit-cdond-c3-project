@@ -234,11 +234,11 @@ jobs:
       - restore_cache:
           keys: [frontend-build]
       - attach_workspace:
-          at: ~/
+          at: ~/workspace
       - run:
             name: Install Dependencies
             command: |
-              apk add --update --no-cache tar gzip nodejs npm aws-cli curl
+              apk add --update --no-cache tar gzip curl nodejs npm aws-cli 
       - run:
           name: Get backend url
           command: |
@@ -258,8 +258,9 @@ jobs:
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - destroy-environment
-      - revert-migrations
+      - destroy-environment:
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
+      
                     
   deploy-backend:
     docker:
@@ -267,15 +268,15 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-            fingerprints: ["96:9f:69:bf:88:57:05:8e:52:1a:07:e4:4a:f7:9f:f5"]
+            fingerprints: ["ac:07:f1:f9:b4:90:b4:fe:28:89:52:98:1f:d4:2f:f0"]
       - attach_workspace:
           at: ~/
       - restore_cache:
-          keys: [backend-deps]
+          keys: [backend-deploy]
       - run:
             name: Install Dependencies
             command: |
-              apk add --update --no-cache tar gzip nodejs npm aws-cli curl ansible
+              apk add --update --no-cache tar gzip curl nodejs npm aws-cli ansible
       - run:
           name: Deploy backend
           command: |
@@ -284,12 +285,12 @@ jobs:
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz .
-            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
-            mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
-            cd .circleci/ansible
-            ansible-playbook -i inventory.txt deploy-backend.yml
-      - destroy-environment
-      - revert-migrations
+            mkdir -p ~/project/ansible/roles/deploy/files/
+            mv artifact.tar.gz ansible/roles/deploy/files/artifact.tar.gz
+            ansible-playbook ansible/deploy-backend.yml -i ~/workspace/project/ansible/inventory.txt -vvvv
+      - destroy-environment:
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
+      
 
 
 workflows:

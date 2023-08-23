@@ -1,0 +1,33 @@
+- name: Update/upgrade packages
+  become: true
+  apt:
+    update_cache: yes
+    upgrade: yes
+
+- name: Install Node.js, npm
+  become: true
+  apt:
+    name: 
+      - nodejs
+      - npm
+  environment:
+    NODE_OPTIONS: "--max_old_space_size=4096" # Increase memory limit for npm
+
+- name: install pm2
+  npm:
+    name: pm2
+    global: true
+    state: latest
+    production: true
+
+- name: extract artifact
+  become: true
+  unarchive:
+    src: files/artifact.tar.gz
+    dest: .
+
+- name: start app
+  become: true
+  shell: |
+    pm2 stop default
+    pm2 start npm -- start
