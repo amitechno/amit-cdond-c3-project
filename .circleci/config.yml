@@ -222,15 +222,17 @@ jobs:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7} 
   deploy-frontend:
     docker:
-      - image: python:3.11-rc-alpine 
+      - image: circleci/node:13.8.0 
     steps:
       - checkout
       - restore_cache:
           keys: [frontend-build]
       - run:
-            name: Install Dependencies
-            command: |
-              apk add --update --no-cache tar gzip curl nodejs npm aws-cli 
+          name: Install AWS CLI
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
       - run:
           name: Get backend url
           command: |
