@@ -320,6 +320,7 @@ jobs:
           name: Get backend URL
           command: |
             export INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
+            echo ${INSTANCE_IP}
       - run:
           name: Backend smoke test.
           command: |
@@ -345,8 +346,6 @@ jobs:
               exit 1
             fi    
       
-      - destroy-environment:
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations: 
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
   cloudfront-update:
