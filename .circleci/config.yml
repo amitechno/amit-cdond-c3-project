@@ -26,15 +26,15 @@ commands:
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      workflowId:
+      workflow-id:
         type: string   
     steps:
       - run:
           name: Revert migrations
           when: on_fail
           command: |
-            echo "Querying https://kvdb.io/${KVDB_KEY}/migration_<< parameters.workflowId >>"
-            SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_KEY}/migration_<< parameters.workflowId >>)
+            echo "Querying https://kvdb.io/${KVDB_KEY}/migration_<< parameters.workflow-id >>"
+            SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_KEY}/migration_<< parameters.workflow-id >>)
             echo "Migration success was $SUCCESS"
             if [ "$SUCCESS" -eq "1" ]; 
             then
@@ -240,7 +240,7 @@ jobs:
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7} 
       - revert-migrations: 
-          workflowId: ${CIRCLE_WORKFLOW_ID:0:7}
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
   deploy-frontend:
     docker:
       - image: circleci/node:13.8.0 
@@ -276,7 +276,7 @@ jobs:
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}  
       - revert-migrations: 
-          workflowId: ${CIRCLE_WORKFLOW_ID:0:7}                       
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}                       
   deploy-backend:
     docker:
       - image: python:3.11-rc-alpine 
@@ -306,7 +306,7 @@ jobs:
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations: 
-          workflowId: ${CIRCLE_WORKFLOW_ID:0:7}
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
   smoke-test:
     docker:
       - image: alpine:latest
@@ -351,7 +351,7 @@ jobs:
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations: 
-          workflowId: ${CIRCLE_WORKFLOW_ID:0:7}
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
   cloudfront-update:
     docker:
       - image: amazon/aws-cli
@@ -362,7 +362,7 @@ jobs:
           command: |
             yum install -y tar gzip
       - run: 
-          name: Record previously deployed workflowId
+          name: Record previously deployed workflow-id
           command: |
             export OldWorkflowID=$(aws cloudformation \
               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
@@ -384,9 +384,9 @@ jobs:
           paths: 
             - OldWorkflowID.txt
       - destroy-environment:
-          workflowId: ${CIRCLE_WORKFLOW_ID:0:7}   
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}   
       - revert-migrations: 
-          workflowId: ${CIRCLE_WORKFLOW_ID:0:7}   
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}   
   cleanup:
     docker:
       - image: amazon/aws-cli
