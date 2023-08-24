@@ -295,13 +295,13 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            cd backend
-            npm install
-            npm run build
-            cd ..
-            tar -C backend -czvf artifact.tar.gz .
-            mkdir -p ~/project/ansible/roles/deploy/files/
-            mv artifact.tar.gz ansible/roles/deploy/files/artifact.tar.gz
+            cp ~/workspace/* ~
+            mkdir -p ansible/roles/deploy/files/
+            cp ~/workspace/* ansible/roles/deploy/files/
+            ls -al .
+            ansible --version
+            echo "Contents  of the inventory.txt file is -------"
+            cat ~/inventory.txt
             ansible-playbook ansible/deploy-backend.yml -i ~/workspace/project/ansible/inventory.txt -vvvv
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -347,6 +347,8 @@ jobs:
               exit 1
             fi    
       
+      - destroy-environment:
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations: 
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
   cloudfront-update:
