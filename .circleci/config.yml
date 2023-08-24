@@ -285,7 +285,7 @@ jobs:
       - add_ssh_keys:
             fingerprints: ["e3:02:15:88:cb:84:1d:a0:3d:f3:63:1d:b5:97:36:e9"]
       - attach_workspace:
-          at: ~/
+          at: ~/workspace
       - restore_cache:
           keys: [backend-deploy]
       - run:
@@ -318,7 +318,7 @@ jobs:
           command: |
             apk add --no-cache curl nodejs npm aws-cli
       - run:
-          name: Get backend URL
+          name: Backend smoke test.
           command: |
             export INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
             echo ${INSTANCE_IP}
