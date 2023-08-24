@@ -303,10 +303,6 @@ jobs:
             mkdir -p ~/project/ansible/roles/deploy/files/
             mv artifact.tar.gz ansible/roles/deploy/files/artifact.tar.gz
             ansible-playbook ansible/deploy-backend.yml -i ~/workspace/project/ansible/inventory.txt -vvvv
-      - destroy-environment:
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations: 
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
  
   smoke-test:
     docker:

@@ -1,4 +1,5 @@
 ---
+
 - name: Update/upgrade packages
   become: true
   apt:
@@ -33,11 +34,15 @@
 
 - name: extract artifact
   become: true
+  unarchive:
+    src: files/artifact.tar.gz
+    dest: .
 
 - name: "Installing Node Dependencies"
   shell: |
     cd ~/backend-app
     npm i
+
 - name: "Executing Node app with PM2"
   shell: |
     cd ~/backend-app/dist
