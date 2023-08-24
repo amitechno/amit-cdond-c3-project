@@ -321,9 +321,6 @@ jobs:
           command: |
             export INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
             echo ${INSTANCE_IP}
-      - run:
-          name: Backend smoke test.
-          command: |
             export API_URL="http://${INSTANCE_IP}:3030"
             echo "API_URL = ${API_URL}"
             echo "${API_URL}"
