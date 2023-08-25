@@ -19,6 +19,8 @@ commands:
             # Delete backend stack if it was created
             aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.workflow-id>>
             # Delete frontend stack if it was created
+            aws s3 rm s3://udapeople-<< parameters.workflowID >> --recursive
+            aws s3 rb s3://udapeople-<< parameters.workflowID >> --force
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow-id>> 
             # Exit with a failure status
             exit 1
@@ -62,6 +64,7 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+
   build-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -78,6 +81,20 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
+      - run:
+          name: "Compiled code will be retrieved by Deploy backend stage"
+          command: |
+            mkdir /tmp/workspace/
+            cp ./backend/package.json /tmp/workspace/
+            cd backend/dist
+            tar -zcvf /tmp/workspace/backend.tar.gz ./
+ #           tar -zcvf ./../../backend.tar.gz ./
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - package.json
+            - backend.tar.gz
+
   test-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -169,37 +186,33 @@ jobs:
           name: Add back-end IP to Ansible inventory
           command: |
             # Fetch EC2 instance IP
-            INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-*" --query "Reservations[].Instances[].PublicIpAddress" --output text)
-            echo "[web]" > ~/project/ansible/inventory.txt
-            echo "$INSTANCE_IP" >> ~/project/ansible/inventory.txt
-            cat ~/project/ansible/inventory.txt
+            aws ec2 describe-instances \
+             --filters "Name=tag:Name,Values=backend-*" \
+             --query "Reservations[].Instances[].PublicIpAddress" \
+             --output text >> .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
-            - ./project/ansible/inventory.txt  
+            - "project" 
       # Destroy environment on failure
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
+
   configure-infrastructure:
     docker:
       - image: python:3.11-rc-alpine # Docker image that supports Ansible
     steps:
-      - checkout  # Checkout code from git
-
-      # Add SSH key fingerprint to the job
+      - checkout
       - add_ssh_keys:
           fingerprints:
             - "e3:02:15:88:cb:84:1d:a0:3d:f3:63:1d:b5:97:36:e9"
-
       # Attach workspace to the job
       - attach_workspace:
-          at: ~/workspace
-
+          at: ~/
       # Install dependencies
       - run:
           name: Install dependencies
           command: |
-            # Install necessary dependencies
             apk add ansible gzip openssh-client
 
       # Configure server
@@ -207,19 +220,34 @@ jobs:
           name: Configure server
           command: |
             # Run the Ansible playbook against the EC2 instance
-            cat ~/workspace/project/ansible/inventory.txt
-            pwd
-            ls -la
-            ansible-playbook ansible/configure-server.yml -i ~/workspace/project/ansible/inventory.txt -vvvv
+            ansible-playbook \
+             .circleci/ansible/configure-server.yml \
+             -i .circleci/ansible/inventory.txt -vvvv
       - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
+
   run-migrations:
     docker:
-      - image: node:14 
+      - image: 'circleci/node:13.8.0'
     steps:
       - checkout
       - restore_cache:
             keys: [backend-build]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Add env vars to .env file
+          command: |
+            echo ENVIRONMENT=$ENVIRONMENT > "./backend/.env"
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> "./backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> "./backend/.env"
+            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> "./backend/.env"
+            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> "./backend/.env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> "./backend/.env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> "./backend/.env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "./backend/.env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "./backend/.env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "./backend/.env"
       - run:
           name: Run migrations
           command: |
@@ -228,7 +256,6 @@ jobs:
             ## Run and save the migration output
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
-
       - run:
           name: Send migration results to memstash
           command: |
@@ -241,32 +268,30 @@ jobs:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7} 
       - revert-migrations: 
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
+
   deploy-frontend:
     docker:
-      - image: circleci/node:13.8.0 
+      - image: amazon/aws-cli
     steps:
       - checkout
-      - restore_cache:
-          keys: [frontend-build]
       - run:
-          name: Install AWS CLI
+          name: "Install dependencies"
           command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
+            yum install -y tar gzip
+            curl -fsSL https://rpm.nodesource.com/setup_16.x | bash - && yum -y install nodejs
       - run:
-          name: Get backend url
+          name: "Get backend url"
           command: |
-            export INSTANCE_IP=$(aws ec2 describe-instances \
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-*" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
               --output text)
-            export API_URL="http://${INSTANCE_IP}:3030"
+            export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
-            echo API_URL="http://${INSTANCE_IP}:3030" >> frontend/.env
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
       - run:
-          name: Deploy frontend objects
+          name: "Deploy frontend objects"
           command: |
             cd frontend
             npm install
@@ -274,9 +299,10 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment:
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}  
-      - revert-migrations: 
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}                       
+          workflowID: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflowID: "${CIRCLE_WORKFLOW_ID:0:7}"     
+
   deploy-backend:
     docker:
       - image: python:3.11-rc-alpine 
@@ -285,24 +311,48 @@ jobs:
       - add_ssh_keys:
             fingerprints: ["e3:02:15:88:cb:84:1d:a0:3d:f3:63:1d:b5:97:36:e9"]
       - attach_workspace:
-          at: ~/workspace
+          at: ~/
+      - attach_workspace:
+          at: /tmp/workspace  
       - restore_cache:
-          keys: [backend-deploy]
+          keys: [backend-build]
       - run:
-            name: Install Dependencies
-            command: |
-              apk add --update --no-cache tar gzip curl nodejs npm aws-cli ansible
+          name: "Install dependencies"
+          command: |            
+            apk add --update ansible openssh-client tar gzip curl nodejs npm
+            ansible --version
+            pip install awscli
+            aws --version            
       - run:
-          name: Deploy backend
+          name: Add env vars to .env file
+          command: |
+            echo ENVIRONMENT=$ENVIRONMENT > "./backend/.env"
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> "./backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> "./backend/.env"
+            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> "./backend/.env"
+            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> "./backend/.env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> "./backend/.env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> "./backend/.env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "./backend/.env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "./backend/.env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "./backend/.env"
+      - run:
+          name: "Deploy and Start backend"
           command: |
             cd backend
-            npm install
+            npm i
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz .
-            mkdir -p ~/project/ansible/roles/deploy/files/
-            mv artifact.tar.gz ansible/roles/deploy/files/artifact.tar.gz
-            ansible-playbook ansible/deploy-backend.yml -i ~/workspace/project/ansible/inventory.txt -vvvv
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            export ANSIBLE_HOST_KEY_CHECKING=false
+            ansible-playbook -i inventory.txt deploy-backend.yml     
+      - destroy-environment:
+          workflowID: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflowID: "${CIRCLE_WORKFLOW_ID:0:7}" 
  
   smoke-test:
     docker:

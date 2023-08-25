@@ -1,0 +1,45 @@
+---
+
+- name: "Creates backend app directory"
+  file:
+    path: ~/backend-app
+    state: directory
+
+- name: Update/upgrade packages
+  become: true
+  apt:
+    update_cache: yes
+    upgrade: yes
+
+- name: Install NPM
+  become: yes
+  shell: |
+    sudo apt update
+    sudo apt-get install -y npm
+    cd /home/ubuntu/backend-app
+
+- name: "Copy build folder to backend instance"
+  become: yes
+  unarchive:
+    src: /root/project/artifact.tar.gz
+    dest: ~/backend-app/
+    owner: ubuntu
+
+
+- name: "Executing Node app with PM2"
+  shell: |
+    cd ~/backend-app/dist
+    pm2 stop default
+    pm2 start npm -- start
+
+  environment:
+      ENVIRONMENT: production
+      TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION') }}"
+      TYPEORM_MIGRATIONS_DIR: "./src/migrations"
+      TYPEORM_MIGRATIONS: ./src/migrations/*.ts
+      TYPEORM_ENTITIES: "./src/modules/domain/**/*.entity.ts"
+      TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
+      TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
+      TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
+      TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
+      TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
