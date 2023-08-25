@@ -2,7 +2,7 @@
 
 - name: "Creates backend app directory"
   file:
-    path: ~/backend-app
+    path: /home/ubuntu/backend-app
     state: directory
 
 - name: Update/upgrade packages
@@ -22,7 +22,7 @@
   become: yes
   unarchive:
     src: /root/project/artifact.tar.gz
-    dest: ~/backend-app/
+    dest: /home/ubuntu/backend-app
     owner: ubuntu
 
 
