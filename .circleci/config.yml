@@ -394,8 +394,6 @@ jobs:
               exit 1
             fi    
 
-      - destroy-environment:
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations: 
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
   cloudfront-update:
