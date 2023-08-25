@@ -259,7 +259,7 @@ jobs:
       - run:
           name: Send migration results to memstash
           command: |
-            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            if grep -q "has been executed successfully." ~/project/backend/src/migrations_dump.txt
             then
               curl --insecure https://kvdb.io/${KVDB_TOKEN}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d 'success'
             fi
@@ -271,38 +271,36 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image: amazon/aws-cli
+      - image: circleci/node:13.8.0 
     steps:
       - checkout
+      - restore_cache:
+          keys: [frontend-build]
       - run:
-          name: "Install dependencies"
+          name: Install AWS CLI
           command: |
-            yum install -y tar gzip
-            curl -fsSL https://rpm.nodesource.com/setup_16.x | bash - && yum -y install nodejs
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
       - run:
-          name: "Get backend url"
+          name: Get backend url
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-*" \
+            export INSTANCE_IP=$(aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
               --output text)
-            export API_URL="http://${BACKEND_IP}:3030"
+            export API_URL="http://${INSTANCE_IP}:3030"
             echo "API_URL = ${API_URL}"
-            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            echo API_URL="http://${INSTANCE_IP}:3030" >> frontend/.env
             cat frontend/.env
       - run:
-          name: "Deploy frontend objects"
+          name: Deploy frontend objects
           command: |
             cd frontend
             npm install
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - destroy-environment:
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}     
-
   deploy-backend:
     docker:
       - image: python:3.11-rc-alpine 
