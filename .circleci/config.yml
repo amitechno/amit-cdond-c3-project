@@ -369,13 +369,19 @@ jobs:
             export API_URL="http://${INSTANCE_IP}:3030"
             echo "API_URL = ${API_URL}"
             echo "${API_URL}"
-            if curl "${API_URL}/api/status" | grep "ok"
-            then
-              echo "Backend smoke test passed."
-            else
-              echo "Backend smoke test failed."
-              exit 1
-            fi
+            MAX_ATTEMPTS=3
+            CURRENT_ATTEMPT=0
+            while [ $CURRENT_ATTEMPT -lt $MAX_ATTEMPTS ]; do
+              if curl "${API_URL}/api/status" | grep -q "ok"; then
+                echo "Smoke test successful!"
+                exit 0
+              else
+                echo "Smoke test failed. Retrying..."
+                CURRENT_ATTEMPT=$((CURRENT_ATTEMPT + 1))
+              fi
+            done
+            echo "Smoke test failed after $MAX_ATTEMPTS attempts."
+            exit 1
       - run:
           name: Frontend smoke test.
           command: |
@@ -388,7 +394,9 @@ jobs:
               echo "Frontend smoke test failed."
               exit 1
             fi    
-      
+            
+      - destroy-environment:
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations: 
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
   cloudfront-update:
@@ -485,5 +493,4 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
-      - cleanup:
-          requires: [cloudfront-update]
+ 
