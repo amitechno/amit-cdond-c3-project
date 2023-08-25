@@ -34,8 +34,8 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            echo "Querying https://kvdb.io/${KVDB_KEY}/migration_<< parameters.workflow-id >>"
-            SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_KEY}/migration_<< parameters.workflow-id >>)
+            echo "Querying https://kvdb.io/4nfh1MYEE85KzCriWc2r7y/migration_<< parameters.workflow-id >>"
+            SUCCESS=$(curl --insecure  https://kvdb.io/4nfh1MYEE85KzCriWc2r7y/migration_<< parameters.workflow-id >>)
             echo "Migration success was $SUCCESS"
             if [ "$SUCCESS" -eq "1" ]; 
             then
@@ -87,7 +87,6 @@ jobs:
             cp ./backend/package.json /tmp/workspace/
             cd backend/dist
             tar -zcvf /tmp/workspace/backend.tar.gz ./
- #           tar -zcvf ./../../backend.tar.gz ./
       - persist_to_workspace:
           root: /tmp/workspace
           paths:
@@ -260,7 +259,7 @@ jobs:
           command: |
             if grep -q "has been executed successfully." ~/project/backend/src/migrations_dump.txt
             then
-              curl --insecure https://kvdb.io/${KVDB_TOKEN}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d 'success'
+              curl --insecure https://kvdb.io/4nfh1MYEE85KzCriWc2r7y/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d 'success'
             fi
       
       - destroy-environment:
@@ -389,7 +388,7 @@ jobs:
             echo "${URL}"
             if curl -s "${URL}" | grep "Welcome"
             then
-              return 1
+              echo "Frontend smoke test passed."
             else
               echo "Frontend smoke test failed."
               exit 1
@@ -416,8 +415,6 @@ jobs:
               --no-paginate --output text)
             echo "Old workflow ID is $OldWorkflowID"
             echo $OldWorkflowID > ~/OldWorkflowID.txt
-            cat ~/OldWorkflowID.txt
-            curl -k https://kvdb.io/${KVDB_KEY}/OldWorkflow_${CIRCLE_WORKFLOW_ID:0:7}  -d $OldWorkflowID
       - run:
           name: Update cloudfront distribution
           command: |
