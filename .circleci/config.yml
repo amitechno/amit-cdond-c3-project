@@ -389,12 +389,14 @@ jobs:
             echo "${URL}"
             if curl -s "${URL}" | grep "Welcome"
             then
-              echo "Frontend smoke test passed."
+              return 1
             else
               echo "Frontend smoke test failed."
               exit 1
             fi    
 
+      - destroy-environment:
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations: 
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
   cloudfront-update:
