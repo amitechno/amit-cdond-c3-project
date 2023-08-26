@@ -441,9 +441,9 @@ jobs:
           command: |
             OldWorkflowID=$(aws cloudformation list-exports \
               --query "Exports[?Name==\`WorkflowID\`].Value" \
-              --no-paginate --output text)
+              --no-paginate --output text | sed 's/^udapeople-//')
             
-            CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
+            CurrentWorkflowID=udapeople-${CIRCLE_WORKFLOW_ID:0:7}
 
             echo "OLD_WORKFLOW_ID=$OldWorkflowID"
             echo CIRCLE_WORKFLOW_ID "$CurrentWorkflowID"
@@ -490,4 +490,4 @@ workflows:
           requires: [smoke-test]
       - cleanup:
           requires: [cloudfront-update]
- 
+
