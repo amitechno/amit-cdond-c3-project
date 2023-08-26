@@ -437,28 +437,26 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install dependencies
-          command: |
-            yum install -y tar gzip
-      - attach_workspace:
-          at: ~/
-      - run:
           name: Remove old stacks and files
           command: |
-            export OldWorkflowID=$(curl --insecure  https://kvdb.io/${KVDB_KEY}/OldWorkflow_${CIRCLE_WORKFLOW_ID:0:7})
-            echo "Old workflow ID: ${OldWorkflowID}"
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
-            echo Stack names: "${STACKS[@]}"   
-            echo "New workflow ID = ${CIRCLE_WORKFLOW_ID:0:7}"
-            if [[ "${CIRCLE_WORKFLOW_ID:0:7}" =~ "${OldWorkflowID}" ]]
+            OldWorkflowID=$(aws cloudformation list-exports \
+              --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --no-paginate --output text)
+            
+            CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
+
+            echo "OLD_WORKFLOW_ID=$OldWorkflowID"
+            echo CIRCLE_WORKFLOW_ID "$CurrentWorkflowID"
+
+            if [[ "$CurrentWorkflowID" != "$OldWorkflowID" ]]
             then
-                echo "Destroying S3 bucket s3://udapeople-${OldWorkflowID}"
-                aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive              
-                echo "Destroying stack udapeople-backend-${OldWorkflowID}"
-                aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
-                echo "Destroying stack udapeople-frontend-${OldWorkflowID}"
-                aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
+              
+              
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+            else
+              echo "$OldWorkflowID==$CurrentWorkflowID => All good..."
             fi
 
 
